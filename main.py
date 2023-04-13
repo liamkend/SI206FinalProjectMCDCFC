@@ -11,19 +11,6 @@ def write_json(filename, dict):
 
 # When storing the data from pro-football-reference, format it as:
 # dictionary = {'Team1 v Team2': (city, 09/05/2003, other ...), 'Team3 v Team4': (city, 04/10/2023, other ...), ...}
-def get_football_data():
-    pass
-
-def get_weather_data(city, month, day, year):
-    url = 'http://api.weatherstack.com/historical'
-    key = '6065327eb56f1efe78274c0de25adead'
-    date = year + '-' + day + '-' + month
-    try:
-        r = requests.get(url + '?access_key=' + key + '&query=' + city + '&historical_date=' + date + '&hourly=1&interval=1')
-        return json.loads(r.text)
-    except:
-        print('Error: Could not get request')
-        return None
 
 # need to format the dictionary to put in files
 def create_game_files(gamesDict):
