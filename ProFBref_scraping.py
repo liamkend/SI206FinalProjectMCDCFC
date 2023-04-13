@@ -12,7 +12,7 @@ soup = BeautifulSoup(response.content, 'html.parser')
 #print(soup)
 games_list = soup.find_all('div', class_ = 'game_summary expanded nohover')
 link_start = 'https://www.pro-football-reference.com'
-print(len(games_list))
+#print(len(games_list))
 for game in games_list:
     link_section = game.find('td', class_ = 'right gamelink')
     link_tag = link_section.find('a')
@@ -24,6 +24,7 @@ for game in games_list:
     #GETTING THE TEAMS
     scorebox = gamesoup.find('div', class_ = 'scorebox')
     strongs_list = scorebox.find_all('strong')
+    
     names_list = []
     for strong in strongs_list:
         if len(strong.find_all('a')) > 0:
@@ -37,20 +38,60 @@ for game in games_list:
     scorebox_meta = scorebox.find('div', class_ = 'scorebox_meta')
     div_list = scorebox_meta.find_all('div')
     date = div_list[0].text
-    #print(date)
-    pf_ref_data[final_teams]['Date'] = date
+    date_split = date.split(' ')
+    year = date_split[3]
+    day = date_split[2].replace(',', '')
+    if date_split[1] == 'Aug':
+        month = '08'
+    elif date_split[1] == 'Sep':
+        month = '09'
+    elif date_split[1] == 'Oct':
+        month = '10'
+    elif date_split[1] == 'Nov':
+        month = '11'
+    elif date_split[1] == 'Dec':
+        month = '12'
+    elif date_split[1] == 'Jan':
+        month = '01'
+    elif date_split[1] == 'Feb':
+        month = '02'
+    # else:
+    #     month = '00'
+    final_date = f"{year}-{day}-{month}"
+    pf_ref_data[final_teams]['Date'] = final_date
 
     #GETTING THE CITY NAME
-    stadium_tag = div_list[2].find('a')
-    stadium_link_end = stadium_tag.get('href', None)
-    stadium_full_link = link_start + stadium_link_end
-    response = requests.get(stadium_full_link)
+    stadium = div_list[2].find('a').text
+    #print(stadium)
+    if stadium == 'Tottenham Stadium':
+        stadium = 'Tottenham Hotspur Stadium'
+    response = requests.get('https://en.wikipedia.org/wiki/List_of_current_National_Football_League_stadiums')
     stadiumsoup = BeautifulSoup(response.content, 'html.parser')
-    paragraph_list = stadiumsoup.find_all('p')
-    full_address = paragraph_list[0].text
-    print(full_address)
-    if len(re.findall('')) > 0:
-        city = re.findall('')[0]
+    stadium_table = stadiumsoup.find('table', style = 'font-size:90%;')
+    #print(len(stadium_table))
+    body = stadium_table.find('tbody')
+    rows = body.find_all('tr')
+    for i in range(1, len(rows)):
+        columns = rows[i].find_all('td')
+        wikiname = rows[i].find('th').find('a').text
+        if stadium == wikiname:
+            city = columns[2].find('a').text
+            final_city = city.split(',')[0]
+            #print(final_city)
+            pf_ref_data[final_teams]['City'] = final_city
+    
+    others_table = stadiumsoup.find('table', style = 'font-size:90%')
+    others_body = others_table.find('tbody')
+    others_rows = others_body.find_all('tr')
+    for i in range(1, len(others_rows)):
+        o_columns = others_rows[i].find_all('td')
+        o_wikiname = others_rows[i].find('th').find('a').text
+        if stadium == o_wikiname:
+            city = o_columns[2].find('a').text
+            final_city = city.split(',')[0]
+            #print(final_city)
+            #pf_ref_data[final_teams]['City'] = final_city
+print(pf_ref_data)
 
 
 
