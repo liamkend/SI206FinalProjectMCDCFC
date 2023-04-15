@@ -7,6 +7,7 @@ import re
 first_pfb_ref_url = 'https://www.pro-football-reference.com/years/2022/week_1.htm'
 pf_ref_data = {}
 
+#def add_nfl_week_to_dict(week_url, final_dict)
 response = requests.get(first_pfb_ref_url)
 soup = BeautifulSoup(response.content, 'html.parser')
 #print(soup)
@@ -90,7 +91,15 @@ for game in games_list:
             city = o_columns[2].find('a').text
             final_city = city.split(',')[0]
             #print(final_city)
-            #pf_ref_data[final_teams]['City'] = final_city
+            pf_ref_data[final_teams]['City'] = final_city
+    
+    #GETTING ROOF TYPE
+    #print(gamesoup)
+    #game_info = gamesoup.find('div', id = "div_game_info")
+    #print(game_info)
+    #roof_section = game_info.find('tbody')
+    #print(roof_section)
+
 print(pf_ref_data)
 
 
