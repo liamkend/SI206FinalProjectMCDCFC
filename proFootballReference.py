@@ -1,7 +1,7 @@
 #PYTHON FILE FOR SCRAPING PRO FB REFERENCE
 import requests
 import json
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 import re
 
 first_pfb_ref_url = 'https://www.pro-football-reference.com/years/2022/week_1.htm'
@@ -95,10 +95,31 @@ for game in games_list:
     
     #GETTING ROOF TYPE
     #print(gamesoup)
-    #game_info = gamesoup.find('div', id = "div_game_info")
-    #print(game_info)
+    #info = gamesoup.find('div', class_ = "content_grid")
+    #game_info = info.find('div', id = "div_game_info")
+    #if final_teams == 'Buffalo Bills vs Los Angeles Rams':
+    #     print(info)
     #roof_section = game_info.find('tbody')
     #print(roof_section)
+
+    #GETTING TOTAL POINTS
+    scores = scorebox.find_all('div', class_ = 'score')
+    total_score = 0
+    for score in scores:
+        score = int(score.text)
+        total_score += score
+    pf_ref_data[final_teams]['Total Points Scored'] = total_score
+
+    #GETTING TOTAL YARDS GAINED
+    team_stats = gamesoup.find_all('div', class_ = 'table_wrapper')
+    #for element in team_stats(text=lambda text: isinstance(text, Comment)):
+        #element.extract()
+    #placeholder = team_stats.find('!--')
+
+    
+    #if final_teams == 'Buffalo Bills vs Los Angeles Rams':
+        #print(team_stats)
+    #print(team_stats)
 
 print(pf_ref_data)
 
