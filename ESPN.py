@@ -2,7 +2,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-def add_25_games(url, final_dict):
+def add_week_to_dict(url, final_dict):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     days_list = soup.find_all('section', class_ = 'Card gameModules')
@@ -11,13 +11,17 @@ def add_25_games(url, final_dict):
         for game in games_list:
             callouts = game.find('div', class_ = 'Scoreboard__Callouts flex items-center mv4 flex-column')
             links = callouts.find_all('a')
+            if len(links) == 1:             #this is an exception for Damar Hamlin game
+                continue
             boxscore_endlink = links[1].get('href', None)
             base_link = 'https://www.espn.com'
             boxscore_link = base_link + boxscore_endlink
             response = response = requests.get(boxscore_link)
             boxscoresoup = BeautifulSoup(response.content, 'html.parser')
             sections_list = boxscoresoup.find_all('li', class_ = 'Nav__Secondary__Menu__Item flex items-center n7 relative n7 Nav__AccessibleMenuItem_Wrapper')
-            teamstats_endlink = sections_list[3].find('a').get('href', None)
+            for section in sections_list:
+                if section.find('span').text == 'Team Stats':
+                    teamstats_endlink = section.find('a').get('href', None)
             teamstats_link = base_link + teamstats_endlink
             response = requests.get(teamstats_link)
             statssoup = BeautifulSoup(response.content, 'html.parser')
@@ -124,15 +128,30 @@ def add_25_games(url, final_dict):
             else:
                 ou_result = 'Push'
             final_dict[final_names]['Over/Under'] = ou_result
-    
-    print(final_dict)
+
+    return final_dict
 
 
-def main():
+def create_full_dict():
     espn_data = {}
-    week_1_url = 'https://www.espn.com/nfl/scoreboard/_/week/1/year/2022/seasontype/2'
-    print(add_25_games(week_1_url, espn_data))
+    week_info = [('1','2'), ('2','2'), ('3','2'), ('4','2'), ('5','2'), ('6','2'), ('7','2'), 
+                 ('8','2'), ('9','2'), ('10','2'), ('11','2'), ('12','2'), ('13','2'), ('14','2'), 
+                 ('15','2'), ('16','2'), ('17','2'), ('18','2'), ('1','3'), ('2','3'), 
+                 ('3','3'), ('5','3')]
+    for week in week_info:
+        week_url = f"https://www.espn.com/nfl/scoreboard/_/week/{week[0]}/year/2022/seasontype/{week[1]}"
+        espn_data = add_week_to_dict(week_url, espn_data)
+    # week_2_url = f"https://www.espn.com/nfl/scoreboard/_/week/{week_info[21][0]}/year/2022/seasontype/{week_info[21][1]}"
+    # espn_data = add_week_to_dict(week_2_url, espn_data)
+    #print(len(espn_data))      #whole thing comes out to 278
+    return espn_data
+
+#def create_all_tables():
+
+#def add_25_to_table()
 
 
-main()
+espn = create_full_dict()
+
+
 
