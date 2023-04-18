@@ -10,15 +10,15 @@ def create_tables(db):
     cur = conn.cursor()
 
     cur.execute("DROP TABLE IF EXISTS Teams")
-    cur.execute('CREATE TABLE Teams (team_id INTEGER PRIMARY KEY, team_name TEXT)')
+    cur.execute('CREATE TABLE Teams (id INTEGER PRIMARY KEY, team_name TEXT UNIQUE)')
     cur.execute("DROP TABLE IF EXISTS Dates")
-    cur.execute('CREATE TABLE Dates (date_id INTEGER PRIMARY KEY, date TEXT)')
+    cur.execute('CREATE TABLE Dates (id INTEGER PRIMARY KEY, date TEXT UNIQUE)')
     cur.execute("DROP TABLE IF EXISTS Cities")
-    cur.execute('CREATE TABLE Cities (city_id INTEGER PRIMARY KEY, city TEXT)')
+    cur.execute('CREATE TABLE Cities (id INTEGER PRIMARY KEY, city TEXT UNIQUE)')
     cur.execute("DROP TABLE IF EXISTS OverUnder")
-    cur.execute('CREATE TABLE OverUnder (ou_id INTEGER PRIMARY KEY, overunder TEXT)')
+    cur.execute('CREATE TABLE OverUnder (id INTEGER PRIMARY KEY, overunder TEXT UNIQUE)')
     cur.execute("DROP TABLE IF EXISTS Games")
-    cur.execute('CREATE TABLE Games (game_id INTEGER PRIMARY KEY, home_team_id INTEGER, away_team_id INTEGER, city_id INTEGER, total_pts_scored INTEGER, total_yrds_gained INTEGER, total_pass_yrds INTEGER, total_rush_yrds INTEGER, total_turnovers INTEGER, overunder TEXT)')
+    cur.execute('CREATE TABLE Games (id INTEGER PRIMARY KEY, home_team_id INTEGER, away_team_id INTEGER, city_id INTEGER, date_id INTEGER, total_pts_scored INTEGER, total_yrds_gained INTEGER, total_pass_yrds INTEGER, total_rush_yrds INTEGER, total_turnovers INTEGER, overunder INTEGER)')
     conn.commit()
 
 def add_25_to_db(url, counter, conn, cur):
@@ -53,12 +53,8 @@ def add_25_to_db(url, counter, conn, cur):
                 for name_area in name_areas:
                     team_name = name_area.find('h2').text
                     team_names.append(team_name)
-                #final_names = team_names[0] + ' vs ' + team_names[1]
                 away_team = team_names[0]
-                print(team_names[0])
-                print(team_names[1])
-                cur.execute('INSERT OR IGNORE INTO Teams (team_name) VALUES (?)', (away_team))
-                cur.execute('INSERT OR IGNORE INTO Teams (team_name) VALUES (?)', (team_names[1]))
+                home_team = team_names[1]
 
                 #GETTING DATE
                 game_info = statssoup.find('section', class_ = 'Card GameInfo')
@@ -80,7 +76,6 @@ def add_25_to_db(url, counter, conn, cur):
                 elif date_split[2] == 'February':
                     month = '02'
                 final_date = f"{year}-{day}-{month}"
-                #final_dict[final_names]['Date'] = final_date
 
                 #GETTING CITY
                 location_area = game_info.find('div', class_ = 'Weather')
@@ -90,7 +85,6 @@ def add_25_to_db(url, counter, conn, cur):
                     final_location = split_location[0]
                 else:
                     final_location = location
-                #final_dict[final_names]['Location'] = final_location
 
                 #GETTING TOTAL POINTS
                 score_areas = top_header.find_all('div', class_ = 'Gamestrip__ScoreContainer flex flex-column items-center justify-center relative')
@@ -98,7 +92,6 @@ def add_25_to_db(url, counter, conn, cur):
                 for score_area in score_areas:
                     score = int(score_area.find('div', class_ = 'Gamestrip__Score relative tc w-100 fw-heavy h2 clr-gray-01').text)
                     total_score += score
-                #final_dict[final_names]['Total Points Scored'] = total_score
 
                 #GETTING TOTAL YARDS
                 main_stats = statssoup.find('section', class_ = 'Card TeamStatsTable')
@@ -110,7 +103,6 @@ def add_25_to_db(url, counter, conn, cur):
                 for i in range(1, len(columns)):
                     team_yards = int(columns[i].text)
                     total_yards += team_yards
-                #final_dict[final_names]['Total Yards Gained'] = total_yards
 
                 #GETTING PASS YARDS
                 total_pass_yards_row = rows[10]
@@ -119,7 +111,6 @@ def add_25_to_db(url, counter, conn, cur):
                 for i in range(1, len(columns)):
                     team_pass_yards = int(columns[i].text)
                     total_pass_yards += team_pass_yards
-                #final_dict[final_names]['Total Passing Yards'] = total_pass_yards
 
                 #GETTING RUSHING YARDS
                 total_rush_yards_row = rows[15]
@@ -128,7 +119,6 @@ def add_25_to_db(url, counter, conn, cur):
                 for i in range(1, len(columns)):
                     team_rush_yards = int(columns[i].text)
                     total_rush_yards += team_rush_yards
-                #final_dict[final_names]['Total Rushing Yards'] = total_rush_yards
 
                 #GETTING TOTAL TURNOVERS
                 total_turnovers_row = rows[20]
@@ -137,7 +127,6 @@ def add_25_to_db(url, counter, conn, cur):
                 for i in range(1, len(columns)):
                     team_turnovers = int(columns[i].text)
                     total_turnovers += team_turnovers
-                #final_dict[final_names]['Total Turnovers'] = total_turnovers
 
                 #GETTING OVER/UNDER
                 betting_area = game_info.find('div', class_ = 'betting-details-with-logo')
@@ -149,7 +138,47 @@ def add_25_to_db(url, counter, conn, cur):
                     ou_result = 'Under'
                 else:
                     ou_result = 'Push'
-                #final_dict[final_names]['Over/Under'] = ou_result
+                
+
+                #INSERTING DATA INTO DATABASE
+                try:
+                    home_team_id = cur.execute(f"SELECT id FROM Teams WHERE team_name = '{home_team}'").fetchone()[0]
+                    away_team_id = cur.execute(f"SELECT id FROM Teams WHERE team_name = '{away_team}'").fetchone()[0]
+                    date_id = cur.execute(f"SELECT id FROM Dates WHERE date = '{final_date}'").fetchone()[0]
+                    
+                    cur.execute('SELECT home_team_id, away_team_id, date_id FROM Games')
+                    found = 'No'
+                    for row in cur:
+                        if (home_team_id, away_team_id, date_id) == row:
+                            found = 'Yes'
+                    if found == "Yes":
+                        continue
+                    else:
+                        city_id = cur.execute(f"SELECT id FROM Cities WHERE city = '{final_location}'").fetchone()[0]
+                        ou_id = cur.execute(f"SELECT id FROM OverUnder WHERE overunder = '{ou_result}'").fetchone()[0]
+                        cur.execute('INSERT OR IGNORE INTO Games (home_team_id, away_team_id, city_id, date_id, total_pts_scored, total_yrds_gained, total_pass_yrds, total_rush_yrds, total_turnovers, overunder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                            [home_team_id, away_team_id, city_id, date_id, total_score, total_yards, total_pass_yards, total_rush_yards, total_turnovers, ou_id])
+                        conn.commit()
+                        counter += 1
+                except:
+                
+                    cur.execute('INSERT OR IGNORE INTO Teams (team_name) VALUES (?)', [away_team])
+                    cur.execute('INSERT OR IGNORE INTO Teams (team_name) VALUES (?)', [home_team])
+                    cur.execute('INSERT OR IGNORE INTO Dates (date) VALUES (?)', [final_date])
+                    cur.execute('INSERT OR IGNORE INTO Cities (city) VALUES (?)', [final_location])
+                    cur.execute('INSERT OR IGNORE INTO OverUnder (overunder) VALUES (?)', [ou_result])
+
+                    home_team_id = cur.execute(f"SELECT id FROM Teams WHERE team_name = '{home_team}'").fetchone()[0]
+                    away_team_id = cur.execute(f"SELECT id FROM Teams WHERE team_name = '{away_team}'").fetchone()[0]
+                    date_id = cur.execute(f"SELECT id FROM Dates WHERE date = '{final_date}'").fetchone()[0]
+                    city_id = cur.execute(f"SELECT id FROM Cities WHERE city = '{final_location}'").fetchone()[0]
+                    ou_id = cur.execute(f"SELECT id FROM OverUnder WHERE overunder = '{ou_result}'").fetchone()[0]
+
+                    cur.execute('INSERT OR IGNORE INTO Games (home_team_id, away_team_id, city_id, date_id, total_pts_scored, total_yrds_gained, total_pass_yrds, total_rush_yrds, total_turnovers, overunder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                            [home_team_id, away_team_id, city_id, date_id, total_score, total_yards, total_pass_yards, total_rush_yards, total_turnovers, ou_id])
+                    conn.commit()
+                
+                    counter += 1
 
     return counter
 
@@ -167,14 +196,13 @@ def add_all_weeks(db):
     for week in week_info:
         week_url = f"https://www.espn.com/nfl/scoreboard/_/week/{week[0]}/year/2022/seasontype/{week[1]}"
         counter = add_25_to_db(week_url, counter, conn, cur)
-    # week_2_url = f"https://www.espn.com/nfl/scoreboard/_/week/{week_info[21][0]}/year/2022/seasontype/{week_info[21][1]}"
-    # espn_data = add_week_to_dict(week_2_url, espn_data)
-    #print(len(espn_data))      #whole thing comes out to 278
+
     return counter
 
 #def add_25_to_table()
 
 print(add_all_weeks('206_Final_project.db'))
+#create_tables('206_Final_project.db')
 
 
 
