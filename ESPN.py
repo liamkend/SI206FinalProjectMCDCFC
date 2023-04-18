@@ -199,9 +199,9 @@ def add_all_weeks(db):
 
     return counter
 
-#def add_25_to_table()
+#RUN FILE AND/OR CLEAR TABLES
 
-print(add_all_weeks('206_Final_project.db'))
+#add_all_weeks('206_Final_project.db')
 #create_tables('206_Final_project.db')
 
 
