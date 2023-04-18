@@ -1,6 +1,25 @@
 #PYTHON FILE FOR SCRAPING ESPN
 import requests
 from bs4 import BeautifulSoup
+import os
+import sqlite3
+
+def create_tables(db):
+    path = os.path.dirname(os.path.abspath(__file__))
+    conn = sqlite3.connect(path+'/'+db)
+    cur = conn.cursor()
+
+    cur.execute("DROP TABLE IF EXISTS Teams")
+    cur.execute('CREATE TABLE Teams (team_id INTEGER PRIMARY KEY, team_name TEXT)')
+    cur.execute("DROP TABLE IF EXISTS Dates")
+    cur.execute('CREATE TABLE Dates (date_id INTEGER PRIMARY KEY, date TEXT)')
+    cur.execute("DROP TABLE IF EXISTS Cities")
+    cur.execute('CREATE TABLE Cities (city_id INTEGER PRIMARY KEY, city TEXT)')
+    cur.execute("DROP TABLE IF EXISTS OverUnder")
+    cur.execute('CREATE TABLE OverUnder (ou_id INTEGER PRIMARY KEY, overunder TEXT)')
+    cur.execute("DROP TABLE IF EXISTS Games")
+    cur.execute('CREATE TABLE Games (game_id INTEGER PRIMARY KEY, home_team_id INTEGER, away_team_id INTEGER, city_id INTEGER, total_pts_scored INTEGER, total_yrds_gained INTEGER, total_pass_yrds INTEGER, total_rush_yrds INTEGER, total_turnovers INTEGER, overunder TEXT)')
+    conn.commit()
 
 def add_week_to_dict(url, final_dict):
     response = requests.get(url)
@@ -146,12 +165,10 @@ def create_full_dict():
     #print(len(espn_data))      #whole thing comes out to 278
     return espn_data
 
-#def create_all_tables():
-
 #def add_25_to_table()
 
 
-espn = create_full_dict()
+create_tables('206_Final_Project.db')
 
 
 
