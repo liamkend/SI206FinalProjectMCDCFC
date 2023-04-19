@@ -201,8 +201,8 @@ def add_all_weeks(db):
 
 #RUN FILE AND/OR CLEAR TABLES
 
-#add_all_weeks('206_Final_project.db')
-#create_tables('206_Final_project.db')
+#add_all_weeks('206_Final_project.db')                #this line will add 25 items to db
+#create_tables('206_Final_project.db')                #this line will clear all of the tables
 
 
 
