@@ -4,41 +4,44 @@ import os
 import requests
 import sqlite3
 
-def get_city(db):
+def create_tables(db):
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(path+'/'+db)
     cur = conn.cursor()
-    return city
 
-def get_date():
-    date = year + '-' + day + '-' + month
-    return date
+    cur.execute("DROP TABLE IF EXISTS Weather")
+    cur.execute('CREATE TABLE Weather (id INTEGER PRIMARY KEY, city TEXT UNIQUE, date TEXT UNIQUE, temperature INTEGER, type TEXT UNIQUE, wind INTEGER, precipitation INTEGER, visability INTEGER)')
+    conn.commit()
 
-def get_weather_data():
+def insert_weather_data(db):
     url = 'http://api.weatherstack.com/historical'
     key = '6065327eb56f1efe78274c0de25adead'
-    city = get_city()
-    date = get_date()
 
-    try:
-        r = requests.get(url + '?access_key=' + key + '&query=' + city + '&historical_date=' + date + '&hourly=1&interval=1')
-        return json.loads(r.text)
-    except:
-        print('Error: Could not get request')
-        return None
-    
-def load_rest_data(db):
-    d = {}
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(path+'/'+db)
     cur = conn.cursor()
-
-    cur.execute(f"SELECT restaurants.name, categories.category, buildings.building, restaurants.rating FROM restaurants JOIN buildings ON restaurants.building_id = buildings.id JOIN categories ON restaurants.category_id = categories.id")
-    for row in cur:
-        d[row[0]] = {'category': row[1], 'building': row[2], 'rating': row[3]}
     
-    cur.close()
-    return d
+    cur.execute(f"SELECT Cities.city, Dates.date FROM Games JOIN Cities ON Games.city_id = Cities.id JOIN Dates ON Games.date_id = Dates.id")
+    for row in cur:
+        city = row[3]
+        date = row[4]
+
+        try:
+            r = requests.get(url + '?access_key=' + key + '&query=' + city + '&historical_date=' + date + '&hourly=1&interval=1')
+            weather_dict = json.loads(r.text)
+            weather = weather_dict['current']
+        except:
+            print('Error: Could not get request for ' + city + ' on ' + date)
+            return None
+
+        temp = weather['temperature']
+        type = weather['weather_description']
+        wind = weather['wind_speed']
+        precip = weather['precip']
+        vis = weather['visability']
+
+        cur.execute('INSERT OR IGNORE INTO Weather (city, date, temperature, type, wind, precipitation, visibility) VALUES (?, ?, ?, ?, ?, ?, ?)', [city, date, temp, type, wind, precip, vis])
+        conn.commit()
 
 def plot_rest_categories(db):
     d = {}
