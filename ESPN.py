@@ -17,7 +17,7 @@ def create_tables(cur, conn):
     cur.execute('CREATE TABLE Games (id INTEGER PRIMARY KEY, home_team_id INTEGER, away_team_id INTEGER, city_id INTEGER, date_id INTEGER, total_pts_scored INTEGER, total_yrds_gained INTEGER, total_pass_yrds INTEGER, total_rush_yrds INTEGER, total_turnovers INTEGER, overunder INTEGER)')
     conn.commit()
 
-def get_NFL_data(url, counter, conn, cur):
+def get_NFL_data(url, cur, conn, counter):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     days_list = soup.find_all('section', class_ = 'Card gameModules')
