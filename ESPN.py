@@ -4,11 +4,7 @@ from bs4 import BeautifulSoup
 import os
 import sqlite3
 
-def create_tables(db):
-    path = os.path.dirname(os.path.abspath(__file__))
-    conn = sqlite3.connect(path+'/'+db)
-    cur = conn.cursor()
-
+def create_tables(cur, conn):
     cur.execute("DROP TABLE IF EXISTS Teams")
     cur.execute('CREATE TABLE Teams (id INTEGER PRIMARY KEY, team_name TEXT UNIQUE)')
     cur.execute("DROP TABLE IF EXISTS Dates")
@@ -21,7 +17,7 @@ def create_tables(db):
     cur.execute('CREATE TABLE Games (id INTEGER PRIMARY KEY, home_team_id INTEGER, away_team_id INTEGER, city_id INTEGER, date_id INTEGER, total_pts_scored INTEGER, total_yrds_gained INTEGER, total_pass_yrds INTEGER, total_rush_yrds INTEGER, total_turnovers INTEGER, overunder INTEGER)')
     conn.commit()
 
-def add_25_to_db(url, counter, conn, cur):
+def add_25_to_db(url, cur, conn, counter):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     days_list = soup.find_all('section', class_ = 'Card gameModules')
@@ -179,23 +175,6 @@ def add_25_to_db(url, counter, conn, cur):
                     conn.commit()
                 
                     counter += 1
-
-    return counter
-
-
-def add_all_weeks(db):
-    path = os.path.dirname(os.path.abspath(__file__))
-    conn = sqlite3.connect(path+'/'+db)
-    cur = conn.cursor()
-
-    week_info = [('1','2'), ('2','2'), ('3','2'), ('4','2'), ('5','2'), ('6','2'), ('7','2'), 
-                 ('8','2'), ('9','2'), ('10','2'), ('11','2'), ('12','2'), ('13','2'), ('14','2'), 
-                 ('15','2'), ('16','2'), ('17','2'), ('18','2'), ('1','3'), ('2','3'), 
-                 ('3','3'), ('5','3')]
-    counter = 0
-    for week in week_info:
-        week_url = f"https://www.espn.com/nfl/scoreboard/_/week/{week[0]}/year/2022/seasontype/{week[1]}"
-        counter = add_25_to_db(week_url, counter, conn, cur)
 
     return counter
 
