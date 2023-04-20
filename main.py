@@ -184,7 +184,7 @@ def calc_betting_pcts(db, cur, conn):
 
 
 # calc_season_avgs('206_Final_Project.db')
-calc_betting_pcts('206_Final_Project.db')
+#calc_betting_pcts('206_Final_Project.db')
 # create_pass_yrds_scatters('206_Final_Project.db')
 # create_pts_by_temp_plot('206_Final_Project.db')
 # create_turnover_by_weather_plot('206_Final_Project.db')

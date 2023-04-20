@@ -9,7 +9,7 @@ def create_tables(cur, conn):
     cur.execute('CREATE TABLE Weather (id INTEGER PRIMARY KEY, city TEXT UNIQUE, date TEXT UNIQUE, temperature INTEGER, type TEXT UNIQUE, wind INTEGER, precipitation INTEGER, visability INTEGER)')
     conn.commit()
 
-def add_25_to_db(cur, conn):
+def get_weather_data(cur, conn):
     url = 'http://api.weatherstack.com/historical'
     key = '6065327eb56f1efe78274c0de25adead'
 

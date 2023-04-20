@@ -178,23 +178,6 @@ def get_NFL_data(url, counter, conn, cur):
 
     return counter
 
-
-def add_all_weeks(db):
-    path = os.path.dirname(os.path.abspath(__file__))
-    conn = sqlite3.connect(path+'/'+db)
-    cur = conn.cursor()
-
-    week_info = [('1','2'), ('2','2'), ('3','2'), ('4','2'), ('5','2'), ('6','2'), ('7','2'), 
-                 ('8','2'), ('9','2'), ('10','2'), ('11','2'), ('12','2'), ('13','2'), ('14','2'), 
-                 ('15','2'), ('16','2'), ('17','2'), ('18','2'), ('1','3'), ('2','3'), 
-                 ('3','3'), ('5','3')]
-    counter = 0
-    for week in week_info:
-        week_url = f"https://www.espn.com/nfl/scoreboard/_/week/{week[0]}/year/2022/seasontype/{week[1]}"
-        counter = add_25_to_db(week_url, counter, conn, cur)
-
-    return counter
-
 #RUN FILE AND/OR CLEAR TABLES
 
 #add_25_to_db('206_Final_project.db')                #this line will add 25 items to db
