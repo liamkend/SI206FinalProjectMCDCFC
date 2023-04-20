@@ -21,7 +21,7 @@ def create_tables(db):
     cur.execute('CREATE TABLE Games (id INTEGER PRIMARY KEY, home_team_id INTEGER, away_team_id INTEGER, city_id INTEGER, date_id INTEGER, total_pts_scored INTEGER, total_yrds_gained INTEGER, total_pass_yrds INTEGER, total_rush_yrds INTEGER, total_turnovers INTEGER, overunder INTEGER)')
     conn.commit()
 
-def add_25_to_db(url, counter, conn, cur):
+def get_NFL_data(url, counter, conn, cur):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     days_list = soup.find_all('section', class_ = 'Card gameModules')
@@ -183,7 +183,7 @@ def add_25_to_db(url, counter, conn, cur):
     return counter
 
 
-def add_all_weeks(db):
+def add_25_to_db(db):
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(path+'/'+db)
     cur = conn.cursor()
@@ -195,13 +195,13 @@ def add_all_weeks(db):
     counter = 0
     for week in week_info:
         week_url = f"https://www.espn.com/nfl/scoreboard/_/week/{week[0]}/year/2022/seasontype/{week[1]}"
-        counter = add_25_to_db(week_url, counter, conn, cur)
+        counter = get_NFL_data(week_url, counter, conn, cur)
 
     return counter
 
 #RUN FILE AND/OR CLEAR TABLES
 
-#add_all_weeks('206_Final_project.db')                #this line will add 25 items to db
+#add_25_to_db('206_Final_project.db')                #this line will add 25 items to db
 #create_tables('206_Final_project.db')                #this line will clear all of the tables
 
 
