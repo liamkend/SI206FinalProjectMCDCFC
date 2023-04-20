@@ -1,8 +1,5 @@
-#PYTHON FILE FOR SCRAPING ESPN
-import requests
 from bs4 import BeautifulSoup
-import os
-import sqlite3
+import requests
 
 def create_tables(cur, conn):
     cur.execute("DROP TABLE IF EXISTS Teams")
@@ -71,7 +68,10 @@ def get_NFL_data(url, cur, conn, counter):
                     month = '01'
                 elif date_split[2] == 'February':
                     month = '02'
-                final_date = f"{year}-{day}-{month}"
+                if len(day) > 1:
+                    final_date = f"{year}-{month}-{day}"
+                else:
+                    final_date = f"{year}-{month}-0{day}"
 
                 #GETTING CITY
                 location_area = game_info.find('div', class_ = 'Weather')
@@ -86,7 +86,7 @@ def get_NFL_data(url, cur, conn, counter):
                 score_areas = top_header.find_all('div', class_ = 'Gamestrip__ScoreContainer flex flex-column items-center justify-center relative')
                 total_score = 0
                 for score_area in score_areas:
-                    score = int(score_area.find('div', class_ = 'Gamestrip__Score relative tc w-100 fw-heavy h2 clr-gray-01').text)
+                    score = int((score_area.find('div', class_ = 'Gamestrip__Score relative tc w-100 fw-heavy h2 clr-gray-01').text)[0:2])
                     total_score += score
 
                 #GETTING TOTAL YARDS
