@@ -24,8 +24,7 @@ def insertIntoDatabase(cur, conn):
     for week in week_info:
         week_url = f"https://www.espn.com/nfl/scoreboard/_/week/{week[0]}/year/2022/seasontype/{week[1]}"
         counter = insertESPN(week_url, cur, conn, counter)
-        if(insertWAPI(cur, conn)):
-            break
+        insertWAPI(cur, conn)
 
 def calc_season_avgs(db, cur, conn):
     cur.execute('SELECT AVG(total_pts_scored), AVG(total_yrds_gained), AVG(total_turnovers) FROM Games')
@@ -195,5 +194,6 @@ def calc_betting_pcts(db, cur, conn):
 cur, conn = setUpDatabase('206_Final_Project.db')
 
 #emptyDatabase(cur, conn)
-insertIntoDatabase(cur, conn)
+for i in range(12):
+    insertIntoDatabase(cur, conn)
 #calc_betting_pcts(db, cur, conn)
