@@ -161,7 +161,6 @@ def create_pct_rush_yrds_by_weather_plot(cur):
 
 def create_ou_pie_charts_by_weather(cur):
     ou_dict = {}
-    fig = plt.figure()
     cur.execute('SELECT Games.overunder, OverUnder.overunder, Weather.type_id FROM Games JOIN Weather ON Games.city_id = Weather.city_id AND Games.date_id = Weather.date_id JOIN OverUnder ON Games.overunder = OverUnder.id')
     for row in list(cur):
         ou_id = row[0]
@@ -174,28 +173,32 @@ def create_ou_pie_charts_by_weather(cur):
             ou_dict[weather_type][ou] = 1
         else:
             ou_dict[weather_type][ou] += 1
-    counter = 0
+    i = -1
+    j = 0
+    fig, axs = plt.subplots(3, 3)
     for type in ou_dict.items():
-        counter += 1
+        i += 1
+        if i == 3:
+            j += 1
+            i = 0
         weather_type = type[0]
         over_total = type[1].get('Over')
         under_total = type[1].get('Under')
         push_total = type[1].get('Push')
-        if push_total == None:
-            push_total = 0
         pie_ready = [over_total, under_total, push_total]
+        for total in range(3):
+            if pie_ready[total] == None:
+                pie_ready[total] = 0
         total = sum(pie_ready)
         labels_list = ['Over', 'Under', 'Push']
-        # ??
-        ax = fig.add_subplot(int(f"12{counter}"))
-        ax.pie(pie_ready, labels = labels_list, autopct=lambda p: '{:.0f}%'.format(p * total / 100))
-        ax.set_title(f"Over/Under: {weather_type}")
-    plt.show()
+        axs[i, j].pie(pie_ready, labels = labels_list, autopct=lambda p: '{:.0f}'.format(p * total / 100))
+        axs[i, j].set_title(f"Over/Under: {weather_type}")
+    fig.show()
 
 
 cur, conn = setUpDatabase('206_Final_Project.db')
 emptyDatabase(cur, conn)
-#insertIntoDatabase(cur, conn)
+# insertIntoDatabase(cur, conn)
 for i in range(12):
     insertIntoDatabase(cur, conn)
 
@@ -213,5 +216,5 @@ create_turnover_by_weather_plot(cur)
 clear_plot()
 create_pct_rush_yrds_by_weather_plot(cur)
 clear_plot()
-#create_ou_pie_charts_by_weather(cur)
+create_ou_pie_charts_by_weather(cur)
 clear_plot()
