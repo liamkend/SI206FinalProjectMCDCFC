@@ -2,7 +2,9 @@ from ESPN import create_tables as ctESPN
 from weatherAPI import create_tables as ctWAPI
 from ESPN import get_NFL_data as insertESPN
 from weatherAPI import get_weather_data as insertWAPI
+import matplotlib.pyplot as plt
 import os
+import json
 import sqlite3
 
 def setUpDatabase(db):
@@ -26,18 +28,25 @@ def insertIntoDatabase(cur, conn):
         counter = insertESPN(week_url, cur, conn, counter)
         insertWAPI(cur, conn)
 
-def calc_season_avgs(db, cur, conn):
+def write_json(filename, dict):
+    with open(filename, 'w') as outFile:
+        json.dump(dict, outFile, indent=2)
+
+def calc_season_avgs(cur):
+    d = {}
     cur.execute('SELECT AVG(total_pts_scored), AVG(total_yrds_gained), AVG(total_turnovers) FROM Games')
     for row in cur:
         avg_pts = round(row[0], 1)
-        print('Average Points per Game: ', str(avg_pts))
+        d['Points per Game'] = avg_pts
         avg_yrds = round(row[1], 1)
-        print('Average Yards per Game: ', str(avg_yrds))
+        d['Yards per Game'] = avg_yrds
         avg_turnovers = round(row[2], 1)
-        print('Average Turnovers per Game: ', str(avg_turnovers))
+        d['Turnovers per Game'] = avg_turnovers
+    return d
 
-def calc_betting_pcts(db, cur, conn):
+def calc_betting_pcts(cur):
     ou_dict = {}
+    d = {}
     total_games = 0
     cur.execute('SELECT id, overunder FROM OverUnder')
     for row in cur:
@@ -49,151 +58,160 @@ def calc_betting_pcts(db, cur, conn):
             total_games += int(row[0])
     for type in ou_dict.values():
         pct = round((int(type[1]) / total_games * 100), 2)
-        print(f"{type[0]}: {pct}%")
+        d[type[0]] =  f"{pct}%"
+    return d
 
-# def create_pass_yrds_scatters(db):
-#     cur, conn = setUpDatabase(db)
-#     pass_yrds_list = []
-#     wind_list = []
-#     visibility_list = []
-#     cur.execute('SELECT Games.total_pass_yrds, Weather.wind, Weather.vis FROM Games JOIN Weather ON Games.city_id = Weahter.city_id AND Games.date_id = Weather.date_id')
-#     for row in cur:
-#         pass_yrds_list.append(row[0])
-#         wind_list.append(row[1])
-#         visibility_list.append(row[2])
-#     fig = plt.figure()
-#     ax1 = fig.add_subplot(121)
-#     ax1.scatter(pass_yrds_list, wind_list)
-#     ax1.set_title("Total Passing Yards by Wind Speeds")
-#     ax1.set_xlim(0,1000)
-#     ax2 = fig.add_subplot(122)
-#     ax2.scatter(pass_yrds_list, visibility_list)
-#     ax2.set_title("Total Passing Yards by Visibility")
-#     ax2.set_xlim(0,1000)
+def clear_plot():
+    plt.clf()
 
-#     plt.show()
+def create_pass_yrds_scatters(cur):
+    pass_yrds_list = []
+    wind_list = []
+    visibility_list = []
+    cur.execute('SELECT Games.total_pass_yrds, Weather.wind, Weather.visibility FROM Games JOIN Weather ON Games.city_id = Weather.city_id AND Games.date_id = Weather.date_id')
+    for row in list(cur):
+        pass_yrds_list.append(row[0])
+        wind_list.append(row[1])
+        visibility_list.append(row[2])
+    fig = plt.figure()
+    ax1 = fig.add_subplot(121)
+    ax1.scatter(pass_yrds_list, wind_list)
+    ax1.set_title("Total Passing Yards by Wind Speeds")
+    ax1.set_xlabel("Passing Yards")
+    ax1.set_ylabel("Wind Speed (mph)")
+    ax1.set_xlim(0,1000)
+    ax2 = fig.add_subplot(122)
+    ax2.scatter(pass_yrds_list, visibility_list)
+    ax2.set_title("Total Passing Yards by Visibility")
+    ax2.set_xlabel("Passing Yards")
+    ax2.set_ylabel("Visibility")
+    ax2.set_xlim(0,1000)
+    plt.show()
 
-# def create_pts_by_temp_plot(db):
-#     cur, conn = setUpDatabase(db)
-#     total_pts_list = []
-#     temp_list = []
-#     cur.execute('SELECT Games.total_pts_scored, Weather.temp FROM Games JOIN Weather ON Games.city_id = Weahter.city_id AND Games.date_id = Weather.date_id')
-#     for row in cur:
-#         total_pts_list.append(row[0])
-#         temp_list.append(row[1])
-#     plt.scatter(temp_list, total_pts_list)
-#     plt.set_xlabel('Temperature')
-#     plt.set_ylabel('Total Points Scored')
-#     plt.set_title('Total Points Scored by Outdoor Temperature')
-#     plt.show()
+def create_pts_by_temp_plot(cur):
+    total_pts_list = []
+    temp_list = []
+    cur.execute('SELECT Games.total_pts_scored, Weather.temperature FROM Games JOIN Weather ON Games.city_id = Weather.city_id AND Games.date_id = Weather.date_id')
+    for row in list(cur):
+        total_pts_list.append(row[0])
+        temp_list.append(row[1])
+    plt.scatter(temp_list, total_pts_list)
+    plt.xlabel('Temperature (°C)')
+    plt.ylabel('Total Points Scored')
+    plt.title('Total Points Scored by Outdoor Temperature')
+    plt.show()
 
-# def create_turnover_by_weather_plot(db):
-#     cur, conn = setUpDatabase(db)
-#     turnovers_by_weather = {}
-#     cur.execute('SELECT Games.total_turnovers, Weather.type FROM Games JOIN Weather ON Games.city_id = Weahter.city_id AND Games.date_id = Weather.date_id')
-#     for row in cur:
-#         turnovers = row[0]
-#         weather_type = row[1]
-#         if weather_type not in turnovers_by_weather.keys():
-#             turnovers_by_weather[weather_type] = [turnovers]
-#         else:
-#             turnovers_by_weather[weather_type].append(turnovers)
-#     for type in turnovers_by_weather.items():
-#         count = 0
-#         total_turnovers = 0
-#         for value in type[1]:
-#             count += 1
-#             total_turnovers += value
-#         avg_turnovers = round((total_turnovers / count), 1)
-#         turnovers_by_weather[type[0]] = avg_turnovers
-#     weather_types_list = turnovers_by_weather.keys()
-#     avg_turnovers_list = turnovers_by_weather.values()
+def create_turnover_by_weather_plot(cur):
+    turnovers_by_weather = {}
+    cur.execute('SELECT Games.total_turnovers, Weather.type_id FROM Games JOIN Weather ON Games.city_id = Weather.city_id AND Games.date_id = Weather.date_id')
+    for row in list(cur):
+        turnovers = row[0]
+        type_id = row[1]
+        weather_type = cur.execute(f"SELECT type FROM Type WHERE id = '{type_id}'").fetchone()[0]
+        if weather_type not in turnovers_by_weather.keys():
+            turnovers_by_weather[weather_type] = [turnovers]
+        else:
+            turnovers_by_weather[weather_type].append(turnovers)
+    for type in turnovers_by_weather.items():
+        count = 0
+        total_turnovers = 0
+        for value in type[1]:
+            count += 1
+            total_turnovers += value
+        avg_turnovers = round((total_turnovers / count), 1)
+        turnovers_by_weather[type[0]] = avg_turnovers
+    weather_types_list = turnovers_by_weather.keys()
+    avg_turnovers_list = turnovers_by_weather.values()
 
-#     plt.bar(weather_types_list, avg_turnovers_list)
-#     plt.set_xlabel('Weather Types')
-#     plt.set_ylabel('Average Turnovers per Game')
-#     plt.set_title('Average Turnovers per Game by Weather Type')
-#     plt.show()
+    plt.bar(weather_types_list, avg_turnovers_list)
+    plt.xlabel('Weather Types')
+    plt.ylabel('Average Turnovers per Game')
+    plt.title('Average Turnovers per Game by Weather Type')
+    plt.show()
 
-# def create_pct_rush_yrds_by_weather_plot(db):
-#     cur, conn = setUpDatabase(db)
-#     pcts = {}
-#     cur.execute('SELECT Games.total_rush_yrds, Games.total_yrds_gained, Weather.type FROM Games JOIN Weather ON Games.city_id = Weahter.city_id AND Games.date_id = Weather.date_id')
-#     for row in cur:
-#         rush_yrds = row[0]
-#         total_yrds = row[1]
-#         pct_rush_yrds = round((rush_yrds / total_yrds), 1)
-#         weather_type = row[2]
-#         if weather_type not in pcts.keys():
-#             pcts[weather_type] = [pct_rush_yrds]
-#         else:
-#             pcts[weather_type].append(pct_rush_yrds)
-#     for type in pcts.items():
-#         count = 0
-#         total_pct = 0
-#         for value in type[1]:
-#             count += 1
-#             total_pct += value
-#         avg_pct_rush_yrds = round((total_pct / count), 1)
-#         pcts[type[0]] = avg_pct_rush_yrds
-#     weather_types_list = pcts.keys()
-#     avg_pct_rush_yrds_list = pcts.values()
+def create_pct_rush_yrds_by_weather_plot(cur):
+    pcts = {}
+    cur.execute('SELECT Games.total_rush_yrds, Games.total_yrds_gained, Weather.type_id FROM Games JOIN Weather ON Games.city_id = Weather.city_id AND Games.date_id = Weather.date_id')
+    for row in list(cur):
+        rush_yrds = row[0]
+        total_yrds = row[1]
+        pct_rush_yrds = round((rush_yrds / total_yrds), 1)
+        type_id = row[2]
+        weather_type = cur.execute(f"SELECT type FROM Type WHERE id = '{type_id}'").fetchone()[0]
+        if weather_type not in pcts.keys():
+            pcts[weather_type] = [pct_rush_yrds]
+        else:
+            pcts[weather_type].append(pct_rush_yrds)
+    for type in pcts.items():
+        count = 0
+        total_pct = 0
+        for value in type[1]:
+            count += 1
+            total_pct += value
+        avg_pct_rush_yrds = round((total_pct / count), 1)
+        pcts[type[0]] = avg_pct_rush_yrds
+    weather_types_list = pcts.keys()
+    avg_pct_rush_yrds_list = pcts.values()
 
-#     plt.bar(weather_types_list, avg_pct_rush_yrds_list)
-#     plt.set_xlabel('Weather Types')
-#     plt.set_ylabel('Pcertange of Rushing Yards per Game')
-#     plt.set_title('Percentage of Rushing Yards per Game by Weather Type')
-#     plt.show()
+    plt.bar(weather_types_list, avg_pct_rush_yrds_list)
+    plt.xlabel('Weather Types')
+    plt.ylabel('Rushing Yards Pcertange per Game')
+    plt.title('Rushing Yards Percentage per Game by Weather Type')
+    plt.show()
 
-# def create_ou_pie_charts_by_weather(db):
-#     cur, conn = setUpDatabase(db)
-
-#     ou_dict = {}
-#     fig = plt.figure()
-#     cur.execute('SELECT Games.overunder, OverUnder.overunder, Weather.type FROM Games JOIN Weather ON Games.id = Weather.game_id JOIN OverUnder ON Games.overunder = OverUnder.id')
-#     for row in cur:
-#         ou_id = row[0]
-#         ou = row[1]
-#         weather_type = row[2]
-#         if weather_type not in ou_dict:
-#             ou_dict[weather_type] = {}
-#         if ou in ou_dict[weather_type].keys():
-#             ou_dict[weather_type][ou] = 1
-#         else:
-#             ou_dict[weather_type][ou] += 1
-#     counter = 0
-#     for type in ou_dict.items():
-#         counter += 1
-#         weather_type = type[0]
-#         over_total = type[1].get('Over')
-#         under_total = type[1].get('Under')
-#         push_total = type[1].get('Push')
-#         pie_ready = [over_total, under_total, push_total]
-#         total = sum(pie_ready)
-#         labels_list = ['Over', 'Under', 'Push']
-#         ax = fig.add_suplot(int(f"12{counter}"))
-#         ax.pie(pie_ready, labels = labels_list, autopct=lambda p: '{:.0f}%'.format(p * total / 100))
-#         ax.set_title(f"Over/Under: {weather_type}")
-#     plt.show()
-    
-
-
-
-
-
-
-# calc_season_avgs('206_Final_Project.db')
-#calc_betting_pcts('206_Final_Project.db')
-# create_pass_yrds_scatters('206_Final_Project.db')
-# create_pts_by_temp_plot('206_Final_Project.db')
-# create_turnover_by_weather_plot('206_Final_Project.db')
-# create_pct_rush_yrds_by_weather_plot('206_Final_Project.db')
-# create_ou_pie_charts_by_weather('206_Final_Project.db')
+def create_ou_pie_charts_by_weather(cur):
+    ou_dict = {}
+    fig = plt.figure()
+    cur.execute('SELECT Games.overunder, OverUnder.overunder, Weather.type_id FROM Games JOIN Weather ON Games.city_id = Weather.city_id AND Games.date_id = Weather.date_id JOIN OverUnder ON Games.overunder = OverUnder.id')
+    for row in list(cur):
+        ou_id = row[0]
+        ou = row[1]
+        type_id = row[2]
+        weather_type = cur.execute(f"SELECT type FROM Type WHERE id = '{type_id}'").fetchone()[0]
+        if weather_type not in ou_dict:
+            ou_dict[weather_type] = {}
+        if ou not in ou_dict[weather_type].keys():
+            ou_dict[weather_type][ou] = 1
+        else:
+            ou_dict[weather_type][ou] += 1
+    counter = 0
+    for type in ou_dict.items():
+        counter += 1
+        weather_type = type[0]
+        over_total = type[1].get('Over')
+        under_total = type[1].get('Under')
+        push_total = type[1].get('Push')
+        if push_total == None:
+            push_total = 0
+        pie_ready = [over_total, under_total, push_total]
+        total = sum(pie_ready)
+        labels_list = ['Over', 'Under', 'Push']
+        # ??
+        ax = fig.add_subplot(int(f"12{counter}"))
+        ax.pie(pie_ready, labels = labels_list, autopct=lambda p: '{:.0f}%'.format(p * total / 100))
+        ax.set_title(f"Over/Under: {weather_type}")
+    plt.show()
 
 
 cur, conn = setUpDatabase('206_Final_Project.db')
-
-#emptyDatabase(cur, conn)
+emptyDatabase(cur, conn)
+#insertIntoDatabase(cur, conn)
 for i in range(12):
     insertIntoDatabase(cur, conn)
-#calc_betting_pcts(db, cur, conn)
+
+d = {}
+dir_path = os.path.dirname(os.path.realpath(__file__))
+d['Season Averages'] = calc_season_avgs(cur)
+d['Betting Percentages'] = calc_betting_pcts(cur)
+write_json(dir_path + '/' + "calculated_data.json", d)
+
+create_pass_yrds_scatters(cur)
+clear_plot()
+create_pts_by_temp_plot(cur)
+clear_plot()
+create_turnover_by_weather_plot(cur)
+clear_plot()
+create_pct_rush_yrds_by_weather_plot(cur)
+clear_plot()
+#create_ou_pie_charts_by_weather(cur)
+clear_plot()

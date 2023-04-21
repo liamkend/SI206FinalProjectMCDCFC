@@ -12,7 +12,6 @@ def get_weather_data(cur, conn):
     url = 'http://api.weatherstack.com/historical'
     key = '6065327eb56f1efe78274c0de25adead'
     games = cur.execute("SELECT * FROM Games")
-    exit = True
 
     for game in list(games):
         city_id = game[3]
@@ -29,7 +28,6 @@ def get_weather_data(cur, conn):
             if found == "Yes":
                 continue
             else:
-                exit = False
                 try:
                     r = requests.get(url + '?access_key=' + key + '&query=' + city + '&historical_date=' + date + '&hourly=1&interval=1')
                     weather_dict = json.loads(r.text)
@@ -53,4 +51,3 @@ def get_weather_data(cur, conn):
 
             cur.execute('INSERT OR IGNORE INTO Weather (city_id, date_id, type_id, temperature, wind, precipitation, visibility) VALUES (?, ?, ?, ?, ?, ?, ?)', [city_id, date_id, type_id, temp, wind, precip, vis])
             conn.commit()
-    return exit

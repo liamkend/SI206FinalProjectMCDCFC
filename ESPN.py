@@ -177,11 +177,3 @@ def get_NFL_data(url, cur, conn, counter):
                     counter += 1
 
     return counter
-
-#RUN FILE AND/OR CLEAR TABLES
-
-#add_25_to_db('206_Final_project.db')                #this line will add 25 items to db
-#create_tables('206_Final_project.db')                #this line will clear all of the tables
-
-
-
