@@ -197,24 +197,24 @@ def create_ou_pie_charts_by_weather(cur):
 
 
 cur, conn = setUpDatabase('206_Final_Project.db')
-emptyDatabase(cur, conn)
+# emptyDatabase(cur, conn)
 # insertIntoDatabase(cur, conn)
-for i in range(12):
-    insertIntoDatabase(cur, conn)
+# for i in range(12):
+#     insertIntoDatabase(cur, conn)
 
-d = {}
-dir_path = os.path.dirname(os.path.realpath(__file__))
-d['Season Averages'] = calc_season_avgs(cur)
-d['Betting Percentages'] = calc_betting_pcts(cur)
-write_json(dir_path + '/' + "calculated_data.json", d)
+# d = {}
+# dir_path = os.path.dirname(os.path.realpath(__file__))
+# d['Season Averages'] = calc_season_avgs(cur)
+# d['Betting Percentages'] = calc_betting_pcts(cur)
+# write_json(dir_path + '/' + "calculated_data.json", d)
 
-create_pass_yrds_scatters(cur)
-clear_plot()
-create_pts_by_temp_plot(cur)
-clear_plot()
-create_turnover_by_weather_plot(cur)
-clear_plot()
-create_pct_rush_yrds_by_weather_plot(cur)
-clear_plot()
-create_ou_pie_charts_by_weather(cur)
-clear_plot()
+# create_pass_yrds_scatters(cur)
+# clear_plot()
+# create_pts_by_temp_plot(cur)
+# clear_plot()
+# create_turnover_by_weather_plot(cur)
+# clear_plot()
+# create_pct_rush_yrds_by_weather_plot(cur)
+# clear_plot()
+# create_ou_pie_charts_by_weather(cur)
+# clear_plot()
